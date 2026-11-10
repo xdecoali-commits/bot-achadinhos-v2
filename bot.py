@@ -7,13 +7,13 @@ import telebot
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # === CONFIGURAÇÃO DO BOT ===
-TOKEN = '9004665294:AAFW82SwWq56BK-EbYHeOS5mo0KfSw50kUU'
+TOKEN = '9087207118:AAFQADdCvNmW-dQsrj5_zNchvq4Wt9rX3AY'
 CHAT_ID = '@achadinhosggg'
 
 # === SEUS LINKS E TAGS REAIS DE AFILIADO ===
 AMAZON_SHORT_LINK = "https://a.co/d/0jePnojI"
 SHOPEE_SUB_ID = "casapraticaabc"
-MELI_SOCIAL_PROFILE = "xdecosantos"
+MELI_TOOL_ID = "xdecosantos"  # Sua tag/identificador no Mercado Livre Afiliados
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -32,42 +32,37 @@ def run_server():
 
 threading.Thread(target=run_server, daemon=True).start()
 
-# === CONVERSORES DE LINK ===
+# === CONVERSORES DE LINK PARA PRODUTOS DIRETOS ===
 
 def converter_amazon(url):
     return AMAZON_SHORT_LINK
 
 def converter_mercadolivre(url):
-    return f"https://www.mercadolivre.com.br/social/{MELI_SOCIAL_PROFILE}"
+    # Anexa a tag ao link do produto em vez de redirecionar para a página do perfil
+    connector = "&" if "?" in url else "?"
+    return f"{url}{connector}matt_tool={MELI_TOOL_ID}"
 
 def converter_shopee(url):
     connector = "&" if "?" in url else "?"
     return f"{url}{connector}sub_id={SHOPEE_SUB_ID}"
 
-# === BUSCA DE OFERTAS ===
+# === BUSCA DE OFERTAS COM LINKS DIRETOS ===
 
 def buscar_ofertas():
     return [
         {
-            'loja': 'Mercado Livre 💛 (Vitrine @xdecosantos)',
+            'loja': 'Mercado Livre 💛',
             'titulo': 'Fritadeira Sem Óleo Air Fryer Mondial 4L Inox',
             'preco': 'R$ 289,90',
-            'link': converter_mercadolivre('https://www.mercadolivre.com.br/p/MLB19734123'),
+            'link': converter_mercadolivre('https://www.mercadolivre.com.br/fritadeira-sem-oleo-air-fryer-mondial-afn-40-bi-4l-1500w-preto-inox/p/MLB19734123'),
             'imagem': 'https://http2.mlstatic.com/D_NQ_NP_630656-MLA74681602434_022024-O.jpg'
         },
         {
             'loja': 'Amazon 📦',
-            'titulo': 'Oferta Especial Selecionada Amazon',
-            'preco': 'Confira o Preço Exclusivo',
-            'link': converter_amazon('https://www.amazon.com.br'),
+            'titulo': 'Echo Dot 5ª Geração com Alexa',
+            'preco': 'R$ 379,00',
+            'link': converter_amazon('https://www.amazon.com.br/dp/B09B23V213'),
             'imagem': 'https://m.media-amazon.com/images/I/71XO11Xw48L._AC_SL1000_.jpg'
-        },
-        {
-            'loja': 'Shopee 🧡 (Casa Prática ABC)',
-            'titulo': 'Utilidades Domésticas & Achadinhos Casa Prática',
-            'preco': 'Menor Preço Garantido',
-            'link': converter_shopee('https://shopee.com.br'),
-            'imagem': ''
         }
     ]
 
@@ -75,7 +70,7 @@ def buscar_ofertas():
 @bot.message_handler(commands=['testar', 'start'])
 def test_post(message):
     try:
-        msg_teste = "<b>🧪 Bot de Achadinhos Conectado!</b>\n\nTodos os links de afiliados configurados e operacionais para o canal @achadinhosggg!"
+        msg_teste = "<b>🧪 Bot de Achadinhos Conectado!</b>\n\nLinks diretos para os produtos configurados com sucesso para o canal @achadinhosggg!"
         bot.send_message(CHAT_ID, msg_teste, parse_mode="HTML")
         bot.reply_to(message, "✅ <b>Teste Ok!</b> Mensagem enviada para o canal @achadinhosggg.", parse_mode="HTML")
     except Exception as e:
@@ -97,7 +92,6 @@ def loop_postagem():
                 if oferta['link'] in produtos_postados:
                     continue
                 
-                # Formatação em HTML segura contra erros de caracteres especiais
                 msg = (
                     f"🔥 <b>ACHADINHO EM OFERTA!</b> 🔥\n\n"
                     f"🛒 <b>Loja:</b> {oferta['loja']}\n"
