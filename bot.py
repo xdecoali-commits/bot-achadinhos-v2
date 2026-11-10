@@ -6,6 +6,7 @@ import telebot
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # === CONFIGURAÇÃO DO BOT ===
+# Importante: mantenha o seu Token ativo do BotFather aqui
 TOKEN = '9004665294:AAEcrA5iFfg7za9-UP6yhZzEfYoUHIpQY7o'
 CHAT_ID = '@achadinhosggg'
 
@@ -33,21 +34,22 @@ def run_server():
 
 threading.Thread(target=run_server, daemon=True).start()
 
-# === CONVERSORES DE LINK DE PRODUTO DIRETO ===
+# === CONVERSORES DE LINK COM FORMATAÇÃO PERFEITA ===
 
 def converter_amazon(url):
-    connector = "&" if "?" in url else "?"
-    return f"{url}{connector}tag={AMAZON_TAG}"
+    # Se a URL já tiver ?, usa &, senão usa ?
+    clean_url = url.split('?')[0]
+    return f"{clean_url}?tag={AMAZON_TAG}"
 
 def converter_mercadolivre(url):
-    connector = "&" if "?" in url else "?"
-    return f"{url}{connector}matt_tool={MELI_TOOL_ID}"
+    clean_url = url.split('?')[0]
+    return f"{clean_url}?matt_tool={MELI_TOOL_ID}"
 
 def converter_shopee(url):
-    connector = "&" if "?" in url else "?"
-    return f"{url}{connector}sub_id={SHOPEE_SUB_ID}"
+    clean_url = url.split('?')[0]
+    return f"{clean_url}?sub_id={SHOPEE_SUB_ID}"
 
-# === OFERTAS COM LINKS DIRETOS E IMAGENS VÁLIDAS ===
+# === OFERTAS COM LINKS PERFEITOS E IMAGENS DIRETA ===
 
 def obter_produtos():
     return [
@@ -64,13 +66,6 @@ def obter_produtos():
             'preco': 'R$ 289,90',
             'link': converter_mercadolivre('https://www.mercadolivre.com.br/fritadeira-sem-oleo-air-fryer-mondial-afn-40-bi-4l-1500w-preto-inox/p/MLB19734123'),
             'imagem': 'https://http2.mlstatic.com/D_NQ_NP_908386-MLU78988622765_092024-O.jpg'
-        },
-        {
-            'loja': 'Shopee 🧡',
-            'titulo': 'Kit Organizador Casa Prática ABC',
-            'preco': 'Confira os Descontos',
-            'link': converter_shopee('https://shopee.com.br'),
-            'imagem': ''
         }
     ]
 
@@ -78,7 +73,7 @@ def obter_produtos():
 @bot.message_handler(commands=['testar', 'start'])
 def test_post(message):
     try:
-        msg_teste = "<b>🧪 Bot de Achadinhos Conectado!</b>\n\nLinks de produtos diretos e fotos ajustadas!"
+        msg_teste = "<b>🧪 Bot de Achadinhos Conectado!</b>\n\nLinks de produtos e imagens formatados com sucesso!"
         bot.send_message(CHAT_ID, msg_teste, parse_mode="HTML")
         bot.reply_to(message, "✅ <b>Sucesso!</b> Mensagem enviada para o canal @achadinhosggg.", parse_mode="HTML")
     except Exception as e:
@@ -109,7 +104,7 @@ def loop_postagem():
                 try:
                     bot.send_photo(CHAT_ID, photo=oferta['imagem'], caption=msg, parse_mode="HTML")
                 except Exception as err:
-                    print(f"Erro foto: {err}")
+                    print(f"Erro imagem: {err}")
                     bot.send_message(CHAT_ID, msg, parse_mode="HTML")
             else:
                 bot.send_message(CHAT_ID, msg, parse_mode="HTML")
