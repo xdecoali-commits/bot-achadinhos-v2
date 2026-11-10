@@ -6,18 +6,17 @@ import telebot
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # === CONFIGURAÇÃO DO BOT ===
-# Importante: mantenha o seu Token ativo do BotFather aqui
 TOKEN = '9004665294:AAEcrA5iFfg7za9-UP6yhZzEfYoUHIpQY7o'
 CHAT_ID = '@achadinhosggg'
 
-# === SEUS PARÂMETROS E TAGS REAIS DE AFILIADO ===
-AMAZON_TAG = "achadinhoamz01-20"   # Sua tag real da Amazon
-SHOPEE_SUB_ID = "casapraticaabc"   # Seu SubID da Shopee
-MELI_TOOL_ID = "xdecosantos"      # Seu ID/Tag do Mercado Livre
+# === SEUS PARÂMETROS E TAGS DE AFILIADO ===
+AMAZON_TAG = "achadinhoamz01-20"   # Tag oficial Amazon
+SHOPEE_SUB_ID = "casapraticaabc"   # SubID Shopee
+MELI_TOOL_ID = "xdecosantos"      # ID Mercado Livre
 
 bot = telebot.TeleBot(TOKEN)
 
-# Servidor HTTP para manter o Render ativo no Cron-Job.org
+# Servidor HTTP para manter o Render ativo via Cron-Job.org
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -34,22 +33,24 @@ def run_server():
 
 threading.Thread(target=run_server, daemon=True).start()
 
-# === CONVERSORES DE LINK COM FORMATAÇÃO PERFEITA ===
+# === FUNÇÕES DE CONVERSÃO LIMPAS (SEM QUEBRAR A URL) ===
 
 def converter_amazon(url):
-    # Se a URL já tiver ?, usa &, senão usa ?
+    # Remove parâmetros existentes e insere a tag limpa da Amazon
     clean_url = url.split('?')[0]
     return f"{clean_url}?tag={AMAZON_TAG}"
 
 def converter_mercadolivre(url):
+    # Insere o identificador de afiliado diretamente no link do produto
     clean_url = url.split('?')[0]
     return f"{clean_url}?matt_tool={MELI_TOOL_ID}"
 
 def converter_shopee(url):
+    # Insere o SubID diretamente no link do produto
     clean_url = url.split('?')[0]
     return f"{clean_url}?sub_id={SHOPEE_SUB_ID}"
 
-# === OFERTAS COM LINKS PERFEITOS E IMAGENS DIRETA ===
+# === OFERTAS COM LINKS DE PRODUTOS DIRETOS E IMAGENS VÁLIDAS ===
 
 def obter_produtos():
     return [
@@ -66,6 +67,13 @@ def obter_produtos():
             'preco': 'R$ 289,90',
             'link': converter_mercadolivre('https://www.mercadolivre.com.br/fritadeira-sem-oleo-air-fryer-mondial-afn-40-bi-4l-1500w-preto-inox/p/MLB19734123'),
             'imagem': 'https://http2.mlstatic.com/D_NQ_NP_908386-MLU78988622765_092024-O.jpg'
+        },
+        {
+            'loja': 'Shopee 🧡',
+            'titulo': 'Kit 3 Organizadores de Geladeira Multiuso',
+            'preco': 'R$ 39,90',
+            'link': converter_shopee('https://shopee.com.br/product/12345678/98765432'),
+            'imagem': ''
         }
     ]
 
@@ -73,7 +81,7 @@ def obter_produtos():
 @bot.message_handler(commands=['testar', 'start'])
 def test_post(message):
     try:
-        msg_teste = "<b>🧪 Bot de Achadinhos Conectado!</b>\n\nLinks de produtos e imagens formatados com sucesso!"
+        msg_teste = "<b>🧪 Bot de Achadinhos Conectado!</b>\n\nLinks diretos e imagens limpas configurados com sucesso!"
         bot.send_message(CHAT_ID, msg_teste, parse_mode="HTML")
         bot.reply_to(message, "✅ <b>Sucesso!</b> Mensagem enviada para o canal @achadinhosggg.", parse_mode="HTML")
     except Exception as e:
@@ -104,13 +112,13 @@ def loop_postagem():
                 try:
                     bot.send_photo(CHAT_ID, photo=oferta['imagem'], caption=msg, parse_mode="HTML")
                 except Exception as err:
-                    print(f"Erro imagem: {err}")
+                    print(f"Erro foto: {err}")
                     bot.send_message(CHAT_ID, msg, parse_mode="HTML")
             else:
                 bot.send_message(CHAT_ID, msg, parse_mode="HTML")
 
             idx += 1
-            time.sleep(300)
+            time.sleep(300) # Publica a cada 5 minutos
 
         except Exception as e:
             print(f"Erro no loop: {e}")
