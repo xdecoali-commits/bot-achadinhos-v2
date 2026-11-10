@@ -17,7 +17,7 @@ MELI_SOCIAL_PROFILE = "xdecosantos"
 
 bot = telebot.TeleBot(TOKEN)
 
-# Servidor HTTP para manter o Render acordado
+# Servidor HTTP para manter o Render ativo
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -32,25 +32,19 @@ def run_server():
 
 threading.Thread(target=run_server, daemon=True).start()
 
-# === CONVERSORES DE LINK PERSONALIZADOS ===
+# === CONVERSORES DE LINK ===
 
 def converter_amazon(url):
-    # Retorna o link curto de afiliado ou injeta o parâmetro se for URL longa
-    if "a.co" in url or "amazon.com" in url:
-        return AMAZON_SHORT_LINK
-    return url
+    return AMAZON_SHORT_LINK
 
 def converter_mercadolivre(url):
-    # Se for link de produto, redireciona para a vitrine social do perfil no Mercado Livre
-    if "mercadolivre.com.br" in url:
-        return f"https://www.mercadolivre.com.br/social/{MELI_SOCIAL_PROFILE}"
-    return url
+    return f"https://www.mercadolivre.com.br/social/{MELI_SOCIAL_PROFILE}"
 
 def converter_shopee(url):
     connector = "&" if "?" in url else "?"
     return f"{url}{connector}sub_id={SHOPEE_SUB_ID}"
 
-# === BUSCA DE OFERTAS DA VITRINE E AFILIADOS ===
+# === BUSCA DE OFERTAS ===
 
 def buscar_ofertas():
     return [
@@ -81,16 +75,16 @@ def buscar_ofertas():
 @bot.message_handler(commands=['testar', 'start'])
 def test_post(message):
     try:
-        msg_teste = "🧪 **Bot de Achadinhos Conectado!**\n\nTodos os links de afiliados configurados para:\n- Mercado Livre: @xdecosantos\n- Shopee: casapraticaabc\n- Amazon: a.co/d/0jePnojI"
-        bot.send_message(CHAT_ID, msg_teste, parse_mode="Markdown")
-        bot.reply_to(message, "✅ **Teste Ok!** Mensagem enviada para o canal @achadinhosggg.")
+        msg_teste = "<b>🧪 Bot de Achadinhos Conectado!</b>\n\nTodos os links de afiliados configurados e operacionais para o canal @achadinhosggg!"
+        bot.send_message(CHAT_ID, msg_teste, parse_mode="HTML")
+        bot.reply_to(message, "✅ <b>Teste Ok!</b> Mensagem enviada para o canal @achadinhosggg.", parse_mode="HTML")
     except Exception as e:
         bot.reply_to(message, f"❌ Erro ao enviar: {e}")
 
 # === LOOP DE PUBLICAÇÃO AUTOMÁTICA ===
 
 def loop_postagem():
-    print("Iniciando publicação automática de achadinhos com os seus links...")
+    print("Iniciando publicação automática de achadinhos...")
     produtos_postados = set()
 
     time.sleep(5)
@@ -103,27 +97,28 @@ def loop_postagem():
                 if oferta['link'] in produtos_postados:
                     continue
                 
+                # Formatação em HTML segura contra erros de caracteres especiais
                 msg = (
-                    f"🔥 **ACHADINHO EM OFERTA!** 🔥\n\n"
-                    f"🛒 **Loja:** {oferta['loja']}\n"
-                    f"📦 **Produto:** {oferta['titulo']}\n\n"
-                    f"💰 **Preço:** {oferta['preco']}\n\n"
-                    f"🔗 [CLIQUE AQUI PARA COMPRAR]({oferta['link']})"
+                    f"🔥 <b>ACHADINHO EM OFERTA!</b> 🔥\n\n"
+                    f"🛒 <b>Loja:</b> {oferta['loja']}\n"
+                    f"📦 <b>Produto:</b> {oferta['titulo']}\n\n"
+                    f"💰 <b>Preço:</b> {oferta['preco']}\n\n"
+                    f"🔗 <a href='{oferta['link']}'>CLIQUE AQUI PARA COMPRAR</a>"
                 )
 
                 if oferta['imagem']:
                     try:
-                        bot.send_photo(CHAT_ID, photo=oferta['imagem'], caption=msg, parse_mode="Markdown")
+                        bot.send_photo(CHAT_ID, photo=oferta['imagem'], caption=msg, parse_mode="HTML")
                     except Exception as err_img:
                         print(f"Erro ao enviar foto: {err_img}")
-                        bot.send_message(CHAT_ID, msg, parse_mode="Markdown")
+                        bot.send_message(CHAT_ID, msg, parse_mode="HTML")
                 else:
-                    bot.send_message(CHAT_ID, msg, parse_mode="Markdown")
+                    bot.send_message(CHAT_ID, msg, parse_mode="HTML")
 
                 produtos_postados.add(oferta['link'])
                 print(f"Postado no canal: {oferta['titulo']}")
                 
-                # Publica uma oferta a cada 5 minutos
+                # Intervalo de 5 minutos entre postagens
                 time.sleep(300)
                 
         except Exception as e:
@@ -132,7 +127,7 @@ def loop_postagem():
 
 if __name__ == "__main__":
     threading.Thread(target=loop_postagem, daemon=True).start()
-    print("Bot Achadinhos ativo e configurado com seus links...")
+    print("Bot Achadinhos ativo...")
     
     while True:
         try:
