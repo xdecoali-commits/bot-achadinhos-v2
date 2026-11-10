@@ -6,7 +6,6 @@ import telebot
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # === CONFIGURAÇÃO DO BOT ===
-# Certifique-se de colhar o Token ATUAL do BotFather para evitar o Erro 401
 TOKEN = '9087207118:AAFQADdCvNmW-dQsrj5_zNchvq4Wt9rX3AY'
 CHAT_ID = '@achadinhosggg'
 
@@ -67,4 +66,66 @@ def obter_produtos():
             'imagem': 'https://http2.mlstatic.com/D_NQ_NP_630656-MLA74681602434_022024-O.jpg'
         },
         {
-            'loja': 'Shopee 
+            'loja': 'Shopee 🧡',
+            'titulo': 'Achadinhos Casa Prática & Utilidades Domésticas',
+            'preco': 'Confira as Ofertas',
+            'link': converter_shopee('https://shopee.com.br'),
+            'imagem': ''
+        }
+    ]
+
+# COMANDO DE TESTE MANUAL
+@bot.message_handler(commands=['testar', 'start'])
+def test_post(message):
+    try:
+        msg_teste = "<b>🧪 Bot de Achadinhos Conectado!</b>\n\nLinks diretos configurados para produtos da Amazon, Shopee e Mercado Livre!"
+        bot.send_message(CHAT_ID, msg_teste, parse_mode="HTML")
+        bot.reply_to(message, "✅ <b>Sucesso!</b> Mensagem enviada para o canal @achadinhosggg.", parse_mode="HTML")
+    except Exception as e:
+        bot.reply_to(message, f"❌ Erro ao enviar: {e}")
+
+# === LOOP DE PUBLICAÇÃO AUTOMÁTICA ===
+
+def loop_postagem():
+    print("Iniciando publicação automática de produtos...")
+    time.sleep(3)
+    
+    produtos = obter_produtos()
+    idx = 0
+
+    while True:
+        try:
+            oferta = produtos[idx % len(produtos)]
+            
+            msg = (
+                f"🔥 <b>ACHADINHO EM OFERTA!</b> 🔥\n\n"
+                f"🛒 <b>Loja:</b> {oferta['loja']}\n"
+                f"📦 <b>Produto:</b> {oferta['titulo']}\n\n"
+                f"💰 <b>Preço:</b> {oferta['preco']}\n\n"
+                f"🔗 <a href='{oferta['link']}'>CLIQUE AQUI PARA COMPRAR</a>"
+            )
+
+            if oferta['imagem']:
+                try:
+                    bot.send_photo(CHAT_ID, photo=oferta['imagem'], caption=msg, parse_mode="HTML")
+                except Exception:
+                    bot.send_message(CHAT_ID, msg, parse_mode="HTML")
+            else:
+                bot.send_message(CHAT_ID, msg, parse_mode="HTML")
+
+            idx += 1
+            time.sleep(300)
+
+        except Exception as e:
+            print(f"Erro no loop: {e}")
+            time.sleep(30)
+
+if __name__ == "__main__":
+    try:
+        bot.remove_webhook()
+        time.sleep(1)
+    except Exception:
+        pass
+
+    threading.Thread(target=loop_postagem, daemon=True).start()
+    bot.infinity_polling(timeout=20, long_polling_timeout=10)
