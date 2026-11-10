@@ -33,7 +33,7 @@ def run_server():
 
 threading.Thread(target=run_server, daemon=True).start()
 
-# === CONVERSORES DE LINK PARA PRODUTOS DIRETOS ===
+# === CONVERSORES DE LINK DE PRODUTO DIRETO ===
 
 def converter_amazon(url):
     connector = "&" if "?" in url else "?"
@@ -47,28 +47,28 @@ def converter_shopee(url):
     connector = "&" if "?" in url else "?"
     return f"{url}{connector}sub_id={SHOPEE_SUB_ID}"
 
-# === OFERTAS COM LINKS DIRETOS E TAGS CONFIGURADAS ===
+# === OFERTAS COM LINKS DIRETOS E IMAGENS VÁLIDAS ===
 
 def obter_produtos():
     return [
         {
             'loja': 'Amazon 📦',
-            'titulo': 'Echo Dot 5ª Geração com Alexa | Som de Alta Qualidade',
+            'titulo': 'Echo Dot 5ª Geração com Alexa',
             'preco': 'R$ 379,00',
             'link': converter_amazon('https://www.amazon.com.br/dp/B09B23V213'),
-            'imagem': 'https://m.media-amazon.com/images/I/71XO11Xw48L._AC_SL1000_.jpg'
+            'imagem': 'https://m.media-amazon.com/images/I/71XO11Xw48L._AC_SL1500_.jpg'
         },
         {
             'loja': 'Mercado Livre 💛',
             'titulo': 'Fritadeira Sem Óleo Air Fryer Mondial 4L Inox',
             'preco': 'R$ 289,90',
             'link': converter_mercadolivre('https://www.mercadolivre.com.br/fritadeira-sem-oleo-air-fryer-mondial-afn-40-bi-4l-1500w-preto-inox/p/MLB19734123'),
-            'imagem': 'https://http2.mlstatic.com/D_NQ_NP_630656-MLA74681602434_022024-O.jpg'
+            'imagem': 'https://http2.mlstatic.com/D_NQ_NP_908386-MLU78988622765_092024-O.jpg'
         },
         {
             'loja': 'Shopee 🧡',
-            'titulo': 'Achadinhos Casa Prática & Utilidades Domésticas',
-            'preco': 'Confira as Ofertas',
+            'titulo': 'Kit Organizador Casa Prática ABC',
+            'preco': 'Confira os Descontos',
             'link': converter_shopee('https://shopee.com.br'),
             'imagem': ''
         }
@@ -78,7 +78,7 @@ def obter_produtos():
 @bot.message_handler(commands=['testar', 'start'])
 def test_post(message):
     try:
-        msg_teste = "<b>🧪 Bot de Achadinhos Conectado!</b>\n\nLinks diretos configurados para produtos da Amazon, Shopee e Mercado Livre!"
+        msg_teste = "<b>🧪 Bot de Achadinhos Conectado!</b>\n\nLinks de produtos diretos e fotos ajustadas!"
         bot.send_message(CHAT_ID, msg_teste, parse_mode="HTML")
         bot.reply_to(message, "✅ <b>Sucesso!</b> Mensagem enviada para o canal @achadinhosggg.", parse_mode="HTML")
     except Exception as e:
@@ -108,7 +108,8 @@ def loop_postagem():
             if oferta['imagem']:
                 try:
                     bot.send_photo(CHAT_ID, photo=oferta['imagem'], caption=msg, parse_mode="HTML")
-                except Exception:
+                except Exception as err:
+                    print(f"Erro foto: {err}")
                     bot.send_message(CHAT_ID, msg, parse_mode="HTML")
             else:
                 bot.send_message(CHAT_ID, msg, parse_mode="HTML")
