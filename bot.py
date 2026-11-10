@@ -7,17 +7,17 @@ import telebot
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # === CONFIGURAÇÃO DO BOT ===
-TOKEN = 'COLE_AQUI_O_SEU_NOVO_TOKEN'
+TOKEN = '9087207118:AAFQADdCvNmW-dQsrj5_zNchvq4Wt9rX3AY'
 CHAT_ID = '@achadinhosggg'
 
-# === SUAS TAGS DE AFILIADO ===
-AMAZON_TAG = "suatag-20"            # Sua tag do Amazon Associados
-MELI_TOOL_ID = "SEU_ID_MELI"        # Seu ID do Mercado Livre (ex: 12345678)
-SHOPEE_SUB_ID = "SEU_SUBID_SHOPEE"   # Seu SubID da Shopee
+# === SEUS LINKS E TAGS REAIS DE AFILIADO ===
+AMAZON_SHORT_LINK = "https://a.co/d/0jePnojI"
+SHOPEE_SUB_ID = "casapraticaabc"
+MELI_SOCIAL_PROFILE = "xdecosantos"
 
 bot = telebot.TeleBot(TOKEN)
 
-# Servidor HTTP para manter o Render ativo
+# Servidor HTTP para manter o Render acordado
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -32,44 +32,48 @@ def run_server():
 
 threading.Thread(target=run_server, daemon=True).start()
 
-# === CONVERSORES DE LINK ===
+# === CONVERSORES DE LINK PERSONALIZADOS ===
 
 def converter_amazon(url):
-    if "tag=" in url:
-        return url
-    connector = "&" if "?" in url else "?"
-    return f"{url}{connector}tag={AMAZON_TAG}"
+    # Retorna o link curto de afiliado ou injeta o parâmetro se for URL longa
+    if "a.co" in url or "amazon.com" in url:
+        return AMAZON_SHORT_LINK
+    return url
 
 def converter_mercadolivre(url):
-    if "matt_tool=" in url:
-        return url
-    connector = "&" if "?" in url else "?"
-    return f"{url}{connector}matt_tool={MELI_TOOL_ID}"
+    # Se for link de produto, redireciona para a vitrine social do perfil no Mercado Livre
+    if "mercadolivre.com.br" in url:
+        return f"https://www.mercadolivre.com.br/social/{MELI_SOCIAL_PROFILE}"
+    return url
 
 def converter_shopee(url):
-    if "sub_id=" in url:
-        return url
     connector = "&" if "?" in url else "?"
     return f"{url}{connector}sub_id={SHOPEE_SUB_ID}"
 
-# === BUSCA DE OFERTAS ===
+# === BUSCA DE OFERTAS DA VITRINE E AFILIADOS ===
 
 def buscar_ofertas():
-    # Produtos com imagens .jpg diretas e links de produto funcionais
     return [
         {
-            'loja': 'Mercado Livre 💛',
-            'titulo': 'Fritadeira Elétrica Airfryer Mondia AFN-40-BI 4L Inox',
+            'loja': 'Mercado Livre 💛 (Vitrine @xdecosantos)',
+            'titulo': 'Fritadeira Sem Óleo Air Fryer Mondial 4L Inox',
             'preco': 'R$ 289,90',
-            'link': converter_mercadolivre('https://www.mercadolivre.com.br/fritadeira-sem-oleo-air-fryer-mondial-afn-40-bi-4l-1500w-preto-inox/p/MLB19734123'),
+            'link': converter_mercadolivre('https://www.mercadolivre.com.br/p/MLB19734123'),
             'imagem': 'https://http2.mlstatic.com/D_NQ_NP_630656-MLA74681602434_022024-O.jpg'
         },
         {
             'loja': 'Amazon 📦',
-            'titulo': 'Echo Dot 5ª Geração com Alexa | Som de alta qualidade',
-            'preco': 'R$ 379,00',
-            'link': converter_amazon('https://www.amazon.com.br/dp/B09B23V213'),
+            'titulo': 'Oferta Especial Selecionada Amazon',
+            'preco': 'Confira o Preço Exclusivo',
+            'link': converter_amazon('https://www.amazon.com.br'),
             'imagem': 'https://m.media-amazon.com/images/I/71XO11Xw48L._AC_SL1000_.jpg'
+        },
+        {
+            'loja': 'Shopee 🧡 (Casa Prática ABC)',
+            'titulo': 'Utilidades Domésticas & Achadinhos Casa Prática',
+            'preco': 'Menor Preço Garantido',
+            'link': converter_shopee('https://shopee.com.br'),
+            'imagem': ''
         }
     ]
 
@@ -77,7 +81,7 @@ def buscar_ofertas():
 @bot.message_handler(commands=['testar', 'start'])
 def test_post(message):
     try:
-        msg_teste = "🧪 **Bot de Achadinhos Conectado!**\n\nPronto para postar as promoções no canal @achadinhosggg com foto e links diretos!"
+        msg_teste = "🧪 **Bot de Achadinhos Conectado!**\n\nTodos os links de afiliados configurados para:\n- Mercado Livre: @xdecosantos\n- Shopee: casapraticaabc\n- Amazon: a.co/d/0jePnojI"
         bot.send_message(CHAT_ID, msg_teste, parse_mode="Markdown")
         bot.reply_to(message, "✅ **Teste Ok!** Mensagem enviada para o canal @achadinhosggg.")
     except Exception as e:
@@ -86,7 +90,7 @@ def test_post(message):
 # === LOOP DE PUBLICAÇÃO AUTOMÁTICA ===
 
 def loop_postagem():
-    print("Iniciando publicação automática de achadinhos...")
+    print("Iniciando publicação automática de achadinhos com os seus links...")
     produtos_postados = set()
 
     time.sleep(5)
@@ -119,7 +123,7 @@ def loop_postagem():
                 produtos_postados.add(oferta['link'])
                 print(f"Postado no canal: {oferta['titulo']}")
                 
-                # Intervalo de 5 minutos entre postagens
+                # Publica uma oferta a cada 5 minutos
                 time.sleep(300)
                 
         except Exception as e:
@@ -128,7 +132,7 @@ def loop_postagem():
 
 if __name__ == "__main__":
     threading.Thread(target=loop_postagem, daemon=True).start()
-    print("Bot Achadinhos ativo...")
+    print("Bot Achadinhos ativo e configurado com seus links...")
     
     while True:
         try:
