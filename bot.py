@@ -7,7 +7,7 @@ import telebot
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # === CONFIGURAÇÃO DO BOT ===
-TOKEN = '9087207118:AAFQADdCvNmW-dQsrj5_zNchvq4Wt9rX3AY'
+TOKEN = '9004665294:AAFW82SwWq56BK-EbYHeOS5mo0KfSw50kUU'
 CHAT_ID = '@achadinhosggg'
 
 # === SEUS LINKS E TAGS REAIS DE AFILIADO ===
