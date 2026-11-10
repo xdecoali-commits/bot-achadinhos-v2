@@ -2,7 +2,6 @@ import os
 import time
 import threading
 import requests
-from bs4 import BeautifulSoup
 import telebot
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -13,7 +12,7 @@ CHAT_ID = '@achadinhosggg'
 # === SEUS LINKS E TAGS REAIS DE AFILIADO ===
 AMAZON_SHORT_LINK = "https://a.co/d/0jePnojI"
 SHOPEE_SUB_ID = "casapraticaabc"
-MELI_TOOL_ID = "xdecosantos"  # Sua tag/identificador no Mercado Livre Afiliados
+MELI_TOOL_ID = "xdecosantos"
 
 bot = telebot.TeleBot(TOKEN)
 
@@ -32,13 +31,12 @@ def run_server():
 
 threading.Thread(target=run_server, daemon=True).start()
 
-# === CONVERSORES DE LINK PARA PRODUTOS DIRETOS ===
+# === CONVERSORES DE LINK ===
 
 def converter_amazon(url):
     return AMAZON_SHORT_LINK
 
 def converter_mercadolivre(url):
-    # Anexa a tag ao link do produto em vez de redirecionar para a página do perfil
     connector = "&" if "?" in url else "?"
     return f"{url}{connector}matt_tool={MELI_TOOL_ID}"
 
@@ -46,22 +44,24 @@ def converter_shopee(url):
     connector = "&" if "?" in url else "?"
     return f"{url}{connector}sub_id={SHOPEE_SUB_ID}"
 
-# === BUSCA DE OFERTAS COM LINKS DIRETOS ===
+# === LISTA DE OFERTAS PARA ENVIO ===
 
 def buscar_ofertas():
+    # Geramos um parâmetro dinâmico para garantir que o bot poste sem ignorar por repetição
+    t = int(time.time())
     return [
         {
             'loja': 'Mercado Livre 💛',
             'titulo': 'Fritadeira Sem Óleo Air Fryer Mondial 4L Inox',
             'preco': 'R$ 289,90',
-            'link': converter_mercadolivre('https://www.mercadolivre.com.br/fritadeira-sem-oleo-air-fryer-mondial-afn-40-bi-4l-1500w-preto-inox/p/MLB19734123'),
+            'link': converter_mercadolivre(f'https://www.mercadolivre.com.br/p/MLB19734123?v={t}'),
             'imagem': 'https://http2.mlstatic.com/D_NQ_NP_630656-MLA74681602434_022024-O.jpg'
         },
         {
             'loja': 'Amazon 📦',
             'titulo': 'Echo Dot 5ª Geração com Alexa',
             'preco': 'R$ 379,00',
-            'link': converter_amazon('https://www.amazon.com.br/dp/B09B23V213'),
+            'link': converter_amazon('https://www.amazon.com.br'),
             'imagem': 'https://m.media-amazon.com/images/I/71XO11Xw48L._AC_SL1000_.jpg'
         }
     ]
@@ -70,7 +70,7 @@ def buscar_ofertas():
 @bot.message_handler(commands=['testar', 'start'])
 def test_post(message):
     try:
-        msg_teste = "<b>🧪 Bot de Achadinhos Conectado!</b>\n\nLinks diretos para os produtos configurados com sucesso para o canal @achadinhosggg!"
+        msg_teste = "<b>🧪 Bot de Achadinhos Conectado!</b>\n\nLinks diretos e foto configurados para o canal @achadinhosggg!"
         bot.send_message(CHAT_ID, msg_teste, parse_mode="HTML")
         bot.reply_to(message, "✅ <b>Teste Ok!</b> Mensagem enviada para o canal @achadinhosggg.", parse_mode="HTML")
     except Exception as e:
@@ -79,19 +79,14 @@ def test_post(message):
 # === LOOP DE PUBLICAÇÃO AUTOMÁTICA ===
 
 def loop_postagem():
-    print("Iniciando publicação automática de achadinhos...")
-    produtos_postados = set()
-
-    time.sleep(5)
+    print("Iniciando loop de publicação...")
+    time.sleep(2)
 
     while True:
         try:
             novas_ofertas = buscar_ofertas()
             
             for oferta in novas_ofertas:
-                if oferta['link'] in produtos_postados:
-                    continue
-                
                 msg = (
                     f"🔥 <b>ACHADINHO EM OFERTA!</b> 🔥\n\n"
                     f"🛒 <b>Loja:</b> {oferta['loja']}\n"
@@ -103,16 +98,15 @@ def loop_postagem():
                 if oferta['imagem']:
                     try:
                         bot.send_photo(CHAT_ID, photo=oferta['imagem'], caption=msg, parse_mode="HTML")
+                        print(f"Foto e mensagem postadas: {oferta['titulo']}")
                     except Exception as err_img:
-                        print(f"Erro ao enviar foto: {err_img}")
+                        print(f"Erro foto, enviando apenas texto: {err_img}")
                         bot.send_message(CHAT_ID, msg, parse_mode="HTML")
                 else:
                     bot.send_message(CHAT_ID, msg, parse_mode="HTML")
-
-                produtos_postados.add(oferta['link'])
-                print(f"Postado no canal: {oferta['titulo']}")
+                    print(f"Mensagem enviada: {oferta['titulo']}")
                 
-                # Intervalo de 5 minutos entre postagens
+                # Aguarda 5 minutos entre postagens
                 time.sleep(300)
                 
         except Exception as e:
@@ -121,7 +115,7 @@ def loop_postagem():
 
 if __name__ == "__main__":
     threading.Thread(target=loop_postagem, daemon=True).start()
-    print("Bot Achadinhos ativo...")
+    print("Bot rodando...")
     
     while True:
         try:
