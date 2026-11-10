@@ -16,16 +16,18 @@ MELI_TOOL_ID = "xdecosantos"
 
 bot = telebot.TeleBot(TOKEN)
 
-# Servidor HTTP para responder 200 OK ao Cron-Job.org
+# Servidor HTTP com porta flexível para o Render
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
         self.wfile.write(b"Bot Achadinhos OK 24/7")
+    def log_message(self, format, *args):
+        return
 
 def run_server():
-    port = int(os.environ.get("PORT", 8080))
+    port = int(os.environ.get("PORT", 10000))
     server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
     server.serve_forever()
 
@@ -44,9 +46,9 @@ def converter_shopee(url):
     connector = "&" if "?" in url else "?"
     return f"{url}{connector}sub_id={SHOPEE_SUB_ID}"
 
-# === LISTA DINÂMICA DE PRODUTOS ===
+# === LISTA DE OFERTAS ===
 
-def obter_produtos_para_envio():
+def obter_produtos():
     return [
         {
             'loja': 'Mercado Livre 💛',
@@ -61,13 +63,6 @@ def obter_produtos_para_envio():
             'preco': 'R$ 379,00',
             'link': converter_amazon('https://www.amazon.com.br/dp/B09B23V213'),
             'imagem': 'https://m.media-amazon.com/images/I/71XO11Xw48L._AC_SL1000_.jpg'
-        },
-        {
-            'loja': 'Shopee 🧡',
-            'titulo': 'Achadinhos Casa Prática ABC & Utilidades Domésticas',
-            'preco': 'Confira os Descontos',
-            'link': converter_shopee('https://shopee.com.br'),
-            'imagem': ''
         }
     ]
 
@@ -75,24 +70,24 @@ def obter_produtos_para_envio():
 @bot.message_handler(commands=['testar', 'start'])
 def test_post(message):
     try:
-        msg_teste = "<b>🧪 Bot de Achadinhos 24/7 no Ar!</b>\n\nSistema conectado com sucesso ao canal @achadinhosggg."
+        msg_teste = "<b>🧪 Bot de Achadinhos Conectado!</b>\n\nSistema rodando 24/7 no canal @achadinhosggg!"
         bot.send_message(CHAT_ID, msg_teste, parse_mode="HTML")
-        bot.reply_to(message, "✅ <b>Teste Ok!</b> Mensagem enviada para o canal @achadinhosggg.", parse_mode="HTML")
+        bot.reply_to(message, "✅ <b>Sucesso!</b> Mensagem enviada para o canal @achadinhosggg.", parse_mode="HTML")
     except Exception as e:
-        bot.reply_to(message, f"❌ Erro ao enviar para o canal: {e}")
+        bot.reply_to(message, f"❌ Erro ao enviar: {e}")
 
-# === LOOP CONTINUO DE PUBLICAÇÃO 24/7 ===
+# === LOOP DE PUBLICAÇÃO AUTOMÁTICA ===
 
 def loop_postagem():
-    print("Iniciando publicação automática continua...")
-    time.sleep(5)
+    print("Iniciando publicação automática...")
+    time.sleep(3)
     
-    produtos = obter_produtos_para_envio()
-    indice = 0
+    produtos = obter_produtos()
+    idx = 0
 
     while True:
         try:
-            oferta = produtos[indice % len(produtos)]
+            oferta = produtos[idx % len(produtos)]
             
             msg = (
                 f"🔥 <b>ACHADINHO EM OFERTA!</b> 🔥\n\n"
@@ -105,32 +100,28 @@ def loop_postagem():
             if oferta['imagem']:
                 try:
                     bot.send_photo(CHAT_ID, photo=oferta['imagem'], caption=msg, parse_mode="HTML")
-                    print(f"[{time.strftime('%H:%M:%S')}] Enviada foto + oferta: {oferta['titulo']}")
-                except Exception as err_img:
-                    print(f"Erro ao enviar foto ({err_img}), enviando texto...")
+                except Exception:
                     bot.send_message(CHAT_ID, msg, parse_mode="HTML")
             else:
                 bot.send_message(CHAT_ID, msg, parse_mode="HTML")
-                print(f"[{time.strftime('%H:%M:%S')}] Enviada oferta em texto: {oferta['titulo']}")
 
-            indice += 1
-
-            # Aguarda 5 minutos (300 segundos) até a próxima postagem
-            time.sleep(300)
+            idx += 1
+            time.sleep(300) # Publica a cada 5 minutos
 
         except Exception as e:
-            print(f"Erro na publicação: {e}")
+            print(f"Erro no loop: {e}")
             time.sleep(30)
 
+# Inicialização limpa
 if __name__ == "__main__":
-    # Inicia o loop de postagens automáticas numa thread dedicada
-    threading.Thread(target=loop_postagem, daemon=True).start()
-    print("Bot rodando 24/7...")
+    # Limpa Webhooks antigos do Telegram para liberar a conexão
+    try:
+        bot.remove_webhook()
+        time.sleep(1)
+    except Exception:
+        pass
 
-    # Polling infinito com reconexão automática
-    while True:
-        try:
-            bot.polling(none_stop=True, interval=2, timeout=90)
-        except Exception as e:
-            print(f"Erro polling: {e}")
-            time.sleep(10)
+    threading.Thread(target=loop_postagem, daemon=True).start()
+    
+    # Polling sem travamento
+    bot.infinity_polling(timeout=20, long_polling_timeout=10)
